@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="io.ditho.assignment.view.activity.MainActivity">
+    tools:context="io.ditho.assignment.view.main.MainActivity">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -29,8 +29,8 @@
         <fragment
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:name="io.ditho.assignment.view.fragment.margedcontact.MergedContactListFragment"
-            tools:layout="@layout/fragment_marged_contact"/>
+            android:name="io.ditho.assignment.view.contact.ContactListFragment"
+            tools:layout="@layout/fragment_contact"/>
 
     </FrameLayout>
 

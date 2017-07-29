@@ -1,10 +1,11 @@
 package io.ditho.assignment.common;
 
-import io.ditho.assignment.repository.entity.ContactEntity;
+import io.ditho.assignment.model.repository.entity.ContactEntity;
+import io.ditho.assignment.model.rest.model.Contact;
 
 public class ModelConverter {
 
-    public static ContactEntity from(io.ditho.assignment.rest.model.Contact contact) {
+    public static ContactEntity from(Contact contact) {
         ContactEntity result = new ContactEntity();
 
         result.setAccount(contact.getAccount());
