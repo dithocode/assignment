@@ -35,6 +35,7 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
 
     private ArrayList<ContactEntity> contactEntityList = new ArrayList<>();
     private HashMap<Integer, ItemState> itemStateMap = new HashMap<>();
+    private ArrayList<Integer> selectedPosition = new ArrayList<>();
 
     private Context context;
     private LayoutInflater inflater;
@@ -60,7 +61,13 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
 
             holder.bindDataPosition = position;
             holder.textAccountValue.setText(contactEntity.getAccount());
-            holder.textBusinessPhoneValue.setText(contactEntity.getBusinessPhone());
+
+            if (contactEntity.getLinkCount() > 0) {
+                holder.textLinkedCountValue.setText(String.valueOf(contactEntity.getLinkCount()));
+            } else {
+                holder.textLinkedCountValue.setText("");
+            }
+
             holder.textFirstNameValue.setText(contactEntity.getFirstName());
             holder.textMiddleNameValue.setText(contactEntity.getMiddleName());
             holder.textLastNameValue.setText(contactEntity.getLastName());
@@ -68,21 +75,22 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
             holder.textGenre.setText(contactEntity.getGender());
             holder.textEmailValue.setText(contactEntity.getEmail());
             holder.textMobileValue.setText(contactEntity.getMobile());
-            holder.textNotesValue.setText(contactEntity.getNotes());
             holder.textPhoneValue.setText(contactEntity.getPhone());
             holder.textBusinessEmailValue.setText(contactEntity.getBusinessEmail());
             holder.textBusinessMobileValue.setText(contactEntity.getBusinessMobile());
+            holder.textBusinessPhoneValue.setText(contactEntity.getBusinessPhone());
             holder.textJobTitleValue.setText(contactEntity.getJobTitleDescription());
+            holder.textNotesValue.setText(contactEntity.getNotes());
             holder.imageContact.setContentDescription(contactEntity.getPictureThumbnailUrl());
 
             ItemState itemState = itemStateMap.get(position);
 
             if (itemState.isExpanded) {
                 holder.layoutExpandable.setVisibility(View.VISIBLE);
-                holder.buttonToggleView.setText(R.string.collapse);
+                holder.imageExpand.setImageResource(R.drawable.ic_arrow_up);
             } else {
                 holder.layoutExpandable.setVisibility(View.GONE);
-                holder.buttonToggleView.setText(R.string.expand);
+                holder.imageExpand.setImageResource(R.drawable.ic_arrow_down);
             }
 
             if (itemState.isSelected) {
@@ -143,6 +151,7 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
     public void clear() {
         contactEntityList.clear();
         itemStateMap.clear();
+        selectedPosition.clear();
     }
 
     public void addAll(Collection<? extends ContactEntity> c) {
@@ -184,44 +193,60 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
     }
 
     public void addSelection(int position) {
-        if (getSelectionMode() && itemStateMap.containsKey(position)) {
+        if (getSelectionMode()) {
+            selectedPosition.add(position);
             ItemState itemState = itemStateMap.get(position);
-            itemState.isSelected = true;
+            if (itemState != null) {
+                itemState.isSelected = true;
+            }
             notifyDataSetChanged();
         }
     }
 
     public void removeSelection(int position) {
-        if (getSelectionMode() && itemStateMap.containsKey(position)) {
+        int listSize = selectedPosition.size();
+        if (getSelectionMode() && listSize > 0) {
+            int listIndex = -1;
+            for (int counter = 0; counter < listSize; counter++) {
+                if (selectedPosition.get(counter) == position) {
+                    listIndex = counter;
+                    break;
+                }
+            }
             ItemState itemState = itemStateMap.get(position);
-            itemState.isSelected = false;
+            if (itemState != null) {
+                itemState.isSelected = false;
+            }
+            selectedPosition.remove(listIndex);
             notifyDataSetChanged();
         }
     }
 
     public List<ContactEntity> getSelection() {
-        int listSize = contactEntityList.size();
-        ArrayList<ContactEntity> selectionList = new ArrayList<>();
+        int listSize = selectedPosition.size();
+        ArrayList<ContactEntity> resultList = new ArrayList<>();
 
         for (int counter = 0; counter < listSize; counter++) {
-            if (itemStateMap.containsKey(counter)) {
-                ItemState itemState = itemStateMap.get(counter);
-                if (itemState.isSelected) {
-                    selectionList.add(contactEntityList.get(counter));
-                }
-            }
+            resultList.add(contactEntityList.get(selectedPosition.get(counter)));
         }
 
-        return selectionList;
+        return resultList;
+    }
+
+    public int getSelectionCount() {
+        return selectedPosition.size();
     }
 
     public void clearSelection() {
-        Collection<ItemState> values = itemStateMap.values();
-        Iterator<ItemState> iterator = values.iterator();
-        while (iterator.hasNext()) {
-            ItemState itemState = iterator.next();
-            itemState.isSelected = false;
+        int listSize = selectedPosition.size();
+        for (int counter = 0; counter < listSize; counter++) {
+            ItemState itemState = itemStateMap.get(selectedPosition.get(counter));
+            if (itemState != null) {
+                itemState.isSelected = false;
+            }
         }
+        selectedPosition.clear();
+
         notifyDataSetChanged();
     }
 
@@ -240,6 +265,9 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
         @Bind(R.id.layout_root)
         View layoutRoot;
 
+        @Bind(R.id.image_expand)
+        ImageView imageExpand;
+
         @Bind(R.id.image_picture)
         ImageView imageContact;
 
@@ -248,6 +276,9 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
 
         @Bind(R.id.text_first_name_value)
         TextView textFirstNameValue;
+
+        @Bind(R.id.text_link_count_value)
+        TextView textLinkedCountValue;
 
         @Bind(R.id.text_middle_name_value)
         TextView textMiddleNameValue;
@@ -299,7 +330,7 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
 
             bindDataPosition = -1;
 
-            buttonToggleView.setOnClickListener(new View.OnClickListener() {
+            layoutRoot.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     int position = bindDataPosition;

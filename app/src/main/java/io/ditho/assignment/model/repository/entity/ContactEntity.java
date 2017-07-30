@@ -57,7 +57,11 @@ public class ContactEntity implements Cloneable {
     private String pictureThumbnailUrl;
 
     @Ignore
-    private boolean isExpand;
+    //@ColumnInfo(name = "ParentID")
+    private String parentId;
+
+    @Ignore
+    private int linkCount;
 
     public ContactEntity() {}
 
@@ -183,15 +187,19 @@ public class ContactEntity implements Cloneable {
 
     public void setPictureThumbnailUrl(String pictureThumbnailUrl) { this.pictureThumbnailUrl = pictureThumbnailUrl; }
 
-    public boolean isExpand() { return isExpand; }
+    public int getLinkCount() { return linkCount; }
 
-    public void setExpand(boolean isExpand) { this.isExpand = isExpand; }
+    public void setLinkCount(int linkCount) { this.linkCount = linkCount; }
+
+    public String getParentId() { return parentId; }
+
+    public void setParentId(String parentId) { this.parentId = parentId; }
 
     @Override
     public String toString() {
         return String.format(
             "[account=%s, id=%s, firstName=%s, middleName=%s, lastName=%s, fullName=%s, gender=%s, email=%s, phone=%s, mobile=%s, " +
-                    "businessEmail=%s, businessPhone=%s, businessMobile=%s, jobTitle=%s, pictureUrl=%s, notes=%s, isExpand=%s]",
+                    "businessEmail=%s, businessPhone=%s, businessMobile=%s, jobTitle=%s, pictureUrl=%s, notes=%s, parentId=%s, linkCount=%d]",
             this.getAccount(),
             this.getId(),
             this.getFirstName(),
@@ -208,6 +216,7 @@ public class ContactEntity implements Cloneable {
             this.getJobTitleDescription(),
             this.getPictureThumbnailUrl(),
             this.getNotes(),
-                this.isExpand());
+            this.getParentId(),
+            this.getLinkCount());
     }
 }

@@ -97,6 +97,7 @@ public class ContactListFragment extends Fragment implements ContactListView {
             @Override
             public void onRefresh() {
                 if (!isRefreshing) {
+                    isRefreshing = true;
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -252,7 +253,7 @@ public class ContactListFragment extends Fragment implements ContactListView {
     }
 
     private void updateSelectionTitleToolbar(Toolbar toolbar) {
-        int selectionCount = listAdapter.getSelection().size();
+        int selectionCount = listAdapter.getSelectionCount();
         if (toolbar != null) {
             toolbar.setTitle(
                     String.format("%d selected", selectionCount)

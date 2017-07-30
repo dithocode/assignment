@@ -158,14 +158,31 @@ public class ContactListPresenterImpl implements ContactListPresenter {
     void mergeContactEntity(List<ContactEntity> listData) {
         int listSize = listData.size();
         if (listData.size() > 0) {
-            ContactEntity contact = listData.get(0);
+            ContactEntity contact = null;
+
+            // check if there any merged entity already, and get the very first occurrence.
+            // since currently it no support link merge contact with merged contact
+            // the rest merged contact (if any) will be ignored
+            for (int counter = 0; counter < listSize; counter++) {
+                ContactEntity temp = listData.get(counter);
+                if (temp.getLinkCount() > 0) {
+                    contact = temp;
+                    break;
+                }
+            }
+
+            // if no merged entity found
+            if (contact == null) {
+                contact = listData.get(0);
+            }
+
             MergeEntity newMerge = new MergeEntity(contact);
 
-            newMerge.setId(String.valueOf(System.currentTimeMillis()));
+            if (newMerge.getLinkCount() == 0) {
+                newMerge.setId(String.valueOf(System.currentTimeMillis()));
+            }
 
-            // get non empty value as first default data for new merge entity
-            // start with 1, since index 0 already used as default base data
-            for (int counter = 1; counter < listSize; counter++) {
+            for (int counter = 0; counter < listSize; counter++) {
                 contact = listData.get(counter);
                 if (TextUtils.isEmpty(newMerge.getFirstName()) &&
                         !TextUtils.isEmpty(contact.getFirstName())) {
@@ -221,9 +238,8 @@ public class ContactListPresenterImpl implements ContactListPresenter {
                 }
             }
 
-            // insert newly created merge entity
+            // insert newly/updated merge entity
             mergeDao.insertAll(newMerge);
-
 
             // insert link relation between merge entity and contact entity
             ArrayList<MergeContactEntity> mergeContactList = new ArrayList<>();
@@ -232,8 +248,13 @@ public class ContactListPresenterImpl implements ContactListPresenter {
                 MergeContactEntity newMergeContact = new MergeContactEntity();
                 newMergeContact.setContactId(contact.getId());
                 newMergeContact.setMergeId(newMerge.getId());
-                mergeContactList.add(newMergeContact);
+                // do not insert/ignore merge entity
+                // since currently it no support link merge entity with merged entity
+                if (contact.getLinkCount() == 0) {
+                    mergeContactList.add(newMergeContact);
+                }
             }
+
             mergeContactDao.insertAll(mergeContactList);
         }
     }
@@ -241,8 +262,14 @@ public class ContactListPresenterImpl implements ContactListPresenter {
     void updateViewModel() {
         List<MergeEntity> queryResult = mergeDao.getMergeContact();
         List<ContactEntity> results = new ArrayList<>();
+        int queryResultSize = queryResult.size();
 
-        results.addAll(queryResult);
+        for (int counter = 0; counter < queryResultSize; counter++) {
+            MergeEntity mergeEntity = queryResult.get(counter);
+            int linkCount = mergeContactDao.countLinked(mergeEntity.getId());
+            mergeEntity.setLinkCount(linkCount);
+            results.add(mergeEntity);
+        }
 
         view.updateModel(results);
         view.finishLoad();

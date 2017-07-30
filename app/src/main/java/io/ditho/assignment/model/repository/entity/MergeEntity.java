@@ -24,6 +24,6 @@ public class MergeEntity extends ContactEntity {
         setJobTitleDescription(contactEntity.getJobTitleDescription());
         setPictureThumbnailUrl(contactEntity.getPictureThumbnailUrl());
         setNotes(contactEntity.getNotes());
-        setExpand(contactEntity.isExpand());
+        setLinkCount(contactEntity.getLinkCount());
     }
 }

@@ -17,6 +17,9 @@ public interface MergeContactDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(MergeContactEntity... mergeContact);
 
+    @Query("SELECT count(*) FROM MergeContactEntity WHERE MergeID = :margeID")
+    int countLinked(String margeID);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<MergeContactEntity> mergeContactList);
 
