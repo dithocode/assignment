@@ -125,13 +125,16 @@ public class LinkedContactListFragment extends Fragment implements LinkedContact
         }
     }
 
-    private void exitFragment() {
+    private void revertToolbar() {
         MainActivity theActivity = (MainActivity) getActivity();
         ActionBar theActionBar = theActivity.getSupportActionBar();
         if (theActionBar != null) {
             theActionBar.setDisplayHomeAsUpEnabled(false);
         }
         theActivity.setupToolbar();
+    }
+
+    private void exitFragment() {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
@@ -252,6 +255,7 @@ public class LinkedContactListFragment extends Fragment implements LinkedContact
 
     @Override
     public boolean goBack() {
+        revertToolbar();
         return false;
     }
 

@@ -48,8 +48,8 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="8dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginStart="16dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
 
@@ -116,7 +116,7 @@
 
                     <TextView
                         android:id="@+id/text_first_name_value"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="18sp" />
 
@@ -132,13 +132,16 @@
                         android:id="@+id/text_middle_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
                         android:text="@string/middle_name"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/text_middle_name_value"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:gravity="center_horizontal"
                         android:textSize="18sp" />
 
 
@@ -154,13 +157,15 @@
                         android:id="@+id/text_last_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="right|end"
                         android:text="@string/last_name"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/text_last_name_value"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="right|end"
                         android:textSize="18sp" />
 
                 </LinearLayout>

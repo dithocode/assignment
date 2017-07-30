@@ -73,6 +73,9 @@ public class ContactListFragment extends Fragment implements ContactListView {
         View view = inflater.inflate(R.layout.fragment_contact, container, false);
         ButterKnife.bind(this, view);
 
+        MainActivity theActivity = (MainActivity) getActivity();
+        theActivity.setupToolbar();
+
         setupRecycleView();
         presenter.init(
                 this,
