@@ -16,8 +16,17 @@ public interface MergeDao {
     @Query("SELECT * FROM MergeEntity ORDER BY Account, FirstName ASC")
     List<MergeEntity> getAll();
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    void insertAll(MergeEntity... users);
+    @Query("SELECT * FROM MergeEntity " +
+            "UNION ALL " +
+            "SELECT * FROM ContactEntity " +
+            "WHERE ContactEntity.Account <> '' " +
+            "AND ContactEntity.FirstName <> '' " +
+            "AND ContactEntity.id NOT IN (SELECT ContactID as id FROM MergeContactEntity) " +
+            "ORDER BY Account, FirstName ASC")
+    List<MergeEntity> getMergeContact();
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAll(MergeEntity... merge);
 
     @Query("DELETE FROM MergeEntity WHERE 1")
     void deleteAll();

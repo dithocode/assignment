@@ -30,7 +30,7 @@ public class MergedListPresenterImpl implements MergedListPresenter {
     private DefaultRepository defaultRepository;
 
     private List<MergeEntity> contactList = new ArrayList<>();
-    private MergeDao mergedContactDao;
+    private MergeDao mergedDao;
     private RepositoryProvider repositoryProvider;
     private ContactDao contactDao;
 
@@ -69,14 +69,14 @@ public class MergedListPresenterImpl implements MergedListPresenter {
         this.repositoryProvider = repositoryProvider;
 
         defaultRepository = repositoryProvider.getDefaultRepository();
-        mergedContactDao = defaultRepository.getMergedContactDao();
+        mergedDao = defaultRepository.getMergedDao();
         contactDao = defaultRepository.getContactDao();
     }
 
     @Override
     public void deinit() {
         contactDao = null;
-        mergedContactDao = null;
+        mergedDao = null;
         defaultRepository = null;
     }
 
@@ -126,211 +126,6 @@ public class MergedListPresenterImpl implements MergedListPresenter {
 
         @Override
         public void run() {
-            updateContactEntity();
-            updateMergeContactEntity();
-            updateViewModel();
-        }
-
-        void updateContactEntity() {
-            int listSize = listData.size();
-            List<ContactEntity> newRecordList = new ArrayList<>();
-
-            contactDao.deleteAll();
-            for (int counter = 0; counter < listSize; counter++) {
-                ContactEntity newRecord = ModelConverter.from(listData.get(counter));
-                if (TextUtils.isEmpty(newRecord.getId())) {
-                    newRecord.setId(String.valueOf(System.currentTimeMillis()));
-                }
-                newRecordList.add(newRecord);
-            }
-
-            // insert / replace existing contact entity
-            contactDao.insertAll(newRecordList);
-        }
-
-        void updateMergeContactEntity() {
-            // clear merged record
-            mergedContactDao.deleteAll();
-
-            // find and group contact by account and first name
-            List<ContactEntity> list = contactDao.getValidContact();
-            int listSize = list.size();
-
-            for (int counter = 0; counter < listSize; counter++) {
-                ContactEntity contactEntity = list.get(counter);
-
-                Log.i(getClass().getName(),
-                        String.format("Checking Account=%s, FirstName=%s",
-                                contactEntity.getAccount(),
-                                contactEntity.getFirstName()));
-
-                MergeEntity mergeEntity = new MergeEntity(contactEntity);
-
-                // assign new contact id if existing contact doesn't have one
-                if (TextUtils.isEmpty(mergeEntity.getId())) {
-                    mergeEntity.setId(String.valueOf(System.currentTimeMillis()));
-                }
-
-                String[] arrCompleteName = contactEntity.getFirstName().split(" ");
-                String onlyFirstNameCriteria = arrCompleteName[0] + "%";
-
-                List<String> results;
-                if (TextUtils.isEmpty(mergeEntity.getMiddleName())) {
-                    // find and get fist valid middle name
-                    results = contactDao.getMiddleName(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setMiddleName(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getLastName())) {
-                    // find and get fist valid last name
-                    results = contactDao.getLastName(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setLastName(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getFirstName())) {
-                    // find and get fist valid full name
-                    results = contactDao.getFullName(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setFullName(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getEmail())) {
-                    // find and get fist valid email
-                    results = contactDao.getEmail(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setEmail(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getMobile())) {
-                    // find and get fist valid mobile
-                    results = contactDao.getMobile(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setMobile(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getPhone())) {
-                    // find and get fist valid phone
-                    results = contactDao.getPhone(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setPhone(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getBusinessEmail())) {
-                    // find and get fist valid business email
-                    results = contactDao.getBusinessEmail(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setBusinessEmail(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getBusinessMobile())) {
-                    // find and get fist valid business mobile
-                    results = contactDao.getBusinessMobile(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setBusinessMobile(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getBusinessPhone())) {
-                    // find and get fist valid business phone
-                    results = contactDao.getBusinessPhone(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setBusinessPhone(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getJobTitleDescription())) {
-                    // find and get fist valid business phone
-                    results = contactDao.getJobTitleDescription(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setJobTitleDescription(results.get(0));
-                    }
-                }
-
-                if (TextUtils.isEmpty(mergeEntity.getNotes())) {
-                    // find and get fist valid business phone
-                    results = contactDao.getNotes(
-                            contactEntity.getAccount(),
-                            onlyFirstNameCriteria,
-                            contactEntity.getId());
-
-                    if (results != null && results.size() > 0) {
-                        mergeEntity.setNotes(results.get(0));
-                    }
-                }
-
-                // find and get fist valid picture url
-                results = contactDao.getPictureThumbnailUrl(
-                        contactEntity.getAccount(),
-                        onlyFirstNameCriteria,
-                        contactEntity.getId());
-
-                if (results != null && results.size() > 0) {
-                    mergeEntity.setPictureThumbnailUrl(results.get(0));
-                }
-                Log.i(getClass().getName(), mergeEntity.toString());
-
-                // store merged data in local database
-                mergedContactDao.insertAll(mergeEntity);
-            }
-        }
-
-        void updateViewModel() {
-            List<MergeEntity> queryResult = mergedContactDao.getAll();
-            List<ContactEntity> results = new ArrayList<>();
-
-            results.addAll(queryResult);
-
-            view.updateModel(results);
-            view.finishLoad();
         }
 
     }

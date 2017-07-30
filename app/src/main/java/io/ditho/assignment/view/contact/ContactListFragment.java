@@ -14,11 +14,13 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.jcodecraeer.xrecyclerview.ArrowRefreshHeader;
 import com.jcodecraeer.xrecyclerview.ProgressStyle;
 import com.jcodecraeer.xrecyclerview.XRecyclerView;
 
@@ -38,6 +40,8 @@ public class ContactListFragment extends Fragment implements ContactListView {
 
     private final ContactListPresenterImpl presenter;
     private ContactListAdapter listAdapter;
+    private Menu menu;
+    private boolean isRefreshing = false;
 
     @Nullable
     @Bind(R.id.listview_contact)
@@ -57,7 +61,7 @@ public class ContactListFragment extends Fragment implements ContactListView {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
         }
-        setHasOptionsMenu(false);
+        setHasOptionsMenu(true);
         setRetainInstance(true);
     }
 
@@ -67,8 +71,7 @@ public class ContactListFragment extends Fragment implements ContactListView {
         View view = inflater.inflate(R.layout.fragment_contact, container, false);
         ButterKnife.bind(this, view);
 
-        setupRecyvleView();
-
+        setupRecycleView();
         presenter.init(
                 this,
                 ApiProvider.getInstance(getActivity()),
@@ -77,7 +80,7 @@ public class ContactListFragment extends Fragment implements ContactListView {
         return view;
     }
 
-    private void setupRecyvleView() {
+    private void setupRecycleView() {
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
@@ -93,12 +96,14 @@ public class ContactListFragment extends Fragment implements ContactListView {
         listView.setLoadingListener(new XRecyclerView.LoadingListener() {
             @Override
             public void onRefresh() {
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        presenter.fetchData();
-                    }
-                }, 1000);
+                if (!isRefreshing) {
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            presenter.fetchData();
+                        }
+                    }, 1000);
+                }
             }
 
             @Override
@@ -118,10 +123,11 @@ public class ContactListFragment extends Fragment implements ContactListView {
 
                 @Override
                 public void onLongPress(MotionEvent e) {
-                    /// IMPORTANT NOTE
+                    // IMPORTANT NOTE
                     // detect if long press is actually pull to refresh
                     // since the RecycleView using 3rd party compiled library,
-                    // then just hack or work around it to detect if its a pull to refresh
+                    // just hack/work around it to detect if its a pull to refresh.
+                    // Pull to refresh arrow position is placed at first position, which is 0
                     View headerView = listView.findChildViewUnder(e.getX(), listView.getY() + 10);
                     int headerPos = -1;
                     if (headerView != null) {
@@ -164,6 +170,7 @@ public class ContactListFragment extends Fragment implements ContactListView {
             listAdapter.addSelection(startPosition);
             listView.setPullRefreshEnabled(false);
             setupSelectionToolbar();
+            setupSelectionMenu();
         } else {
             updateSelectionMode(startPosition);
         }
@@ -182,11 +189,40 @@ public class ContactListFragment extends Fragment implements ContactListView {
     }
 
     private void finishSelectionMode() {
-        MainActivity theActivity = (MainActivity) getActivity();
-        theActivity.setupToolbar();
+        revertSelectionToolbar();
+        setupMenu();
 
         listAdapter.setSelectionMode(false);
         listView.setPullRefreshEnabled(true);
+    }
+
+    private void initMenu(Menu menu) {
+        this.menu = menu;
+        setupMenu();
+    }
+
+    private void setupMenu() {
+        int listSize = menu.size();
+        for (int counter = 0; counter < listSize; counter++) {
+            MenuItem menuItem = menu.getItem(counter);
+            switch (menuItem.getItemId()) {
+                case R.id.action_merge:
+                    menuItem.setVisible(false);
+                    break;
+            }
+        }
+    }
+
+    private void setupSelectionMenu() {
+        int listSize = menu.size();
+        for (int counter = 0; counter < listSize; counter++) {
+            MenuItem menuItem = menu.getItem(counter);
+            switch (menuItem.getItemId()) {
+                case R.id.action_merge:
+                    menuItem.setVisible(true);
+                    break;
+            }
+        }
     }
 
     private void setupSelectionToolbar() {
@@ -224,6 +260,40 @@ public class ContactListFragment extends Fragment implements ContactListView {
         }
     }
 
+    private void revertSelectionToolbar() {
+        MainActivity theActivity = (MainActivity) getActivity();
+        ActionBar theActionBar = theActivity.getSupportActionBar();
+        if (theActionBar != null) {
+            theActionBar.setDisplayHomeAsUpEnabled(false);
+        }
+        theActivity.setupToolbar();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.contact, menu);
+        initMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        boolean retVal = false;
+        switch (item.getItemId()) {
+            case R.id.action_merge:
+                retVal = true;
+                List<ContactEntity> selection = listAdapter.getSelection();
+                finishSelectionMode();
+                presenter.mergeContact(selection);
+
+                break;
+            default:
+                retVal = super.onOptionsItemSelected(item);
+        }
+
+        return retVal;
+    }
+
     @Override
     public void onDestroyView() {
         presenter.deinit();
@@ -246,7 +316,7 @@ public class ContactListFragment extends Fragment implements ContactListView {
     @Override
     public void onStart() {
         super.onStart();
-        listView.setRefreshing(true);
+        presenter.start();
     }
 
     @Override
@@ -269,7 +339,15 @@ public class ContactListFragment extends Fragment implements ContactListView {
 
     @Override
     public void startLoad() {
-
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                if (!isRefreshing) {
+                    isRefreshing = true;
+                    listView.setRefreshing(true);
+                }
+            }
+        });
     }
 
     @Override
@@ -278,6 +356,7 @@ public class ContactListFragment extends Fragment implements ContactListView {
             @Override
             public void run() {
                 listView.refreshComplete();
+                isRefreshing = false;
             }
         });
     }
@@ -291,7 +370,6 @@ public class ContactListFragment extends Fragment implements ContactListView {
                 public void run() {
                     listAdapter.clear();
                     listAdapter.addAll(lModel);
-
                     listAdapter.notifyDataSetChanged();
                 }
             });
@@ -326,7 +404,6 @@ public class ContactListFragment extends Fragment implements ContactListView {
                 }
             });
         }
-
     }
 
     @Override

@@ -1,6 +1,7 @@
 package io.ditho.assignment.presenter.contact;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -13,7 +14,11 @@ import io.ditho.assignment.common.ModelConverter;
 import io.ditho.assignment.model.repository.DefaultRepository;
 import io.ditho.assignment.model.repository.RepositoryProvider;
 import io.ditho.assignment.model.repository.dao.ContactDao;
+import io.ditho.assignment.model.repository.dao.MergeContactDao;
+import io.ditho.assignment.model.repository.dao.MergeDao;
 import io.ditho.assignment.model.repository.entity.ContactEntity;
+import io.ditho.assignment.model.repository.entity.MergeContactEntity;
+import io.ditho.assignment.model.repository.entity.MergeEntity;
 import io.ditho.assignment.model.rest.ApiProvider;
 import io.ditho.assignment.model.rest.ContactApi;
 import io.ditho.assignment.model.rest.model.Contact;
@@ -24,9 +29,12 @@ public class ContactListPresenterImpl implements ContactListPresenter {
 
     private ContactListView view;
     private ContactApi contactApi;
+
     private RepositoryProvider repositoryProvider;
     private DefaultRepository defaultRepository;
     private ContactDao contactDao;
+    private MergeDao mergeDao;
+    private MergeContactDao mergeContactDao;
 
     private Response.Listener<ContactResponse> successListener = new Response.Listener<ContactResponse>() {
         @Override
@@ -64,11 +72,15 @@ public class ContactListPresenterImpl implements ContactListPresenter {
 
         defaultRepository = repositoryProvider.getDefaultRepository();
         contactDao = defaultRepository.getContactDao();
+        mergeDao = defaultRepository.getMergedDao();
+        mergeContactDao = defaultRepository.getMergeContactDao();
     }
 
     @Override
     public void deinit() {
         contactDao = null;
+        mergeDao = null;
+        mergeContactDao = null;
         defaultRepository = null;
     }
 
@@ -103,7 +115,6 @@ public class ContactListPresenterImpl implements ContactListPresenter {
     @Override
     public void fetchData() {
         view.startLoad();
-
         contactApi.getContactList(
                 getClass().getName(),
                 successListener,
@@ -120,6 +131,139 @@ public class ContactListPresenterImpl implements ContactListPresenter {
         contactApi.cancelAll(getClass().getName());
     }
 
+    @Override
+    public void mergeContact(List<ContactEntity> contactList) {
+        view.startLoad();
+        Executors.newSingleThreadExecutor().submit(
+                new MergeContactWorker(contactList));
+    }
+
+    void updateContactEntity(List<Contact> listData) {
+        int listSize = listData.size();
+        List<ContactEntity> newRecordList = new ArrayList<>();
+
+        for (int counter = 0; counter < listSize; counter++) {
+            ContactEntity newRecord = ModelConverter.from(listData.get(counter));
+            if (TextUtils.isEmpty(newRecord.getId())) {
+                newRecord.setId(String.valueOf(System.currentTimeMillis()));
+            }
+            newRecordList.add(newRecord);
+        }
+
+        // insert / replace existing contact entity
+        contactDao.insertAll(newRecordList);
+    }
+
+
+    void mergeContactEntity(List<ContactEntity> listData) {
+        int listSize = listData.size();
+        if (listData.size() > 0) {
+            ContactEntity contact = listData.get(0);
+            MergeEntity newMerge = new MergeEntity(contact);
+
+            newMerge.setId(String.valueOf(System.currentTimeMillis()));
+
+            // get non empty value as first default data for new merge entity
+            // start with 1, since index 0 already used as default base data
+            for (int counter = 1; counter < listSize; counter++) {
+                contact = listData.get(counter);
+                if (TextUtils.isEmpty(newMerge.getFirstName()) &&
+                        !TextUtils.isEmpty(contact.getFirstName())) {
+                    newMerge.setFirstName(contact.getFirstName());
+                }
+                if (TextUtils.isEmpty(newMerge.getMiddleName()) &&
+                        !TextUtils.isEmpty(contact.getMiddleName())) {
+                    newMerge.setMiddleName(contact.getMiddleName());
+                }
+                if (TextUtils.isEmpty(newMerge.getLastName()) &&
+                        !TextUtils.isEmpty(contact.getLastName())) {
+                    newMerge.setLastName(contact.getLastName());
+                }
+                if (TextUtils.isEmpty(newMerge.getFullName()) &&
+                        !TextUtils.isEmpty(contact.getFullName())) {
+                    newMerge.setFullName(contact.getFullName());
+                }
+                if (TextUtils.isEmpty(newMerge.getEmail()) &&
+                        !TextUtils.isEmpty(contact.getEmail())) {
+                    newMerge.setEmail(contact.getEmail());
+                }
+                if (TextUtils.isEmpty(newMerge.getPhone()) &&
+                        !TextUtils.isEmpty(contact.getPhone())) {
+                    newMerge.setPhone(contact.getPhone());
+                }
+                if (TextUtils.isEmpty(newMerge.getMobile()) &&
+                        !TextUtils.isEmpty(contact.getMobile())) {
+                    newMerge.setMobile(contact.getMobile());
+                }
+                if (TextUtils.isEmpty(newMerge.getBusinessEmail()) &&
+                        !TextUtils.isEmpty(contact.getBusinessEmail())) {
+                    newMerge.setBusinessEmail(contact.getBusinessEmail());
+                }
+                if (TextUtils.isEmpty(newMerge.getBusinessPhone()) &&
+                        !TextUtils.isEmpty(contact.getBusinessPhone())) {
+                    newMerge.setBusinessPhone(contact.getBusinessPhone());
+                }
+                if (TextUtils.isEmpty(newMerge.getBusinessMobile()) &&
+                        !TextUtils.isEmpty(contact.getBusinessMobile())) {
+                    newMerge.setBusinessMobile(contact.getBusinessMobile());
+                }
+                if (TextUtils.isEmpty(newMerge.getJobTitleDescription()) &&
+                        !TextUtils.isEmpty(contact.getJobTitleDescription())) {
+                    newMerge.setJobTitleDescription(contact.getJobTitleDescription());
+                }
+                if (TextUtils.isEmpty(newMerge.getNotes()) &&
+                        !TextUtils.isEmpty(contact.getNotes())) {
+                    newMerge.setNotes(contact.getNotes());
+                }
+                if (TextUtils.isEmpty(newMerge.getPictureThumbnailUrl()) &&
+                        !TextUtils.isEmpty(contact.getPictureThumbnailUrl())) {
+                    newMerge.setPictureThumbnailUrl(contact.getPictureThumbnailUrl());
+                }
+            }
+
+            // insert newly created merge entity
+            mergeDao.insertAll(newMerge);
+
+
+            // insert link relation between merge entity and contact entity
+            ArrayList<MergeContactEntity> mergeContactList = new ArrayList<>();
+            for (int counter = 0; counter < listSize; counter++) {
+                contact = listData.get(counter);
+                MergeContactEntity newMergeContact = new MergeContactEntity();
+                newMergeContact.setContactId(contact.getId());
+                newMergeContact.setMergeId(newMerge.getId());
+                mergeContactList.add(newMergeContact);
+            }
+            mergeContactDao.insertAll(mergeContactList);
+        }
+    }
+
+    void updateViewModel() {
+        List<MergeEntity> queryResult = mergeDao.getMergeContact();
+        List<ContactEntity> results = new ArrayList<>();
+
+        results.addAll(queryResult);
+
+        view.updateModel(results);
+        view.finishLoad();
+    }
+
+    private class MergeContactWorker implements Runnable {
+
+        private List<ContactEntity> listData = new ArrayList<>();
+
+        public MergeContactWorker(List<ContactEntity> listData) {
+            this.listData = listData;
+        }
+
+        @Override
+        public void run() {
+            mergeContactEntity(listData);
+            updateViewModel();
+        }
+
+    }
+
     private class UpdateContactEntityWorker implements Runnable {
 
         private List<Contact> listData = new ArrayList<>();
@@ -130,31 +274,8 @@ public class ContactListPresenterImpl implements ContactListPresenter {
 
         @Override
         public void run() {
-            updateContactEntity();
+            updateContactEntity(listData);
             updateViewModel();
         }
-
-        void updateContactEntity() {
-            int listSize = listData.size();
-            List<ContactEntity> newRecordList = new ArrayList<>();
-
-            for (int counter = 0; counter < listSize; counter++) {
-                ContactEntity newRecord = ModelConverter.from(listData.get(counter));
-                if (TextUtils.isEmpty(newRecord.getId())) {
-                    newRecord.setId(String.valueOf(System.currentTimeMillis()));
-                }
-                newRecordList.add(newRecord);
-            }
-
-            // insert / replace existing contact entity
-            contactDao.insertAll(newRecordList);
-        }
-
-        void updateViewModel() {
-            List<ContactEntity> queryResult = contactDao.getAll();
-            view.updateModel(queryResult);
-            view.finishLoad();
-        }
-
     }
 }
