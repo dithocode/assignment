@@ -1,4 +1,4 @@
-package io.ditho.assignment.view.merge;
+package io.ditho.assignment.view.linkedcontact;
 
 import java.util.List;
 

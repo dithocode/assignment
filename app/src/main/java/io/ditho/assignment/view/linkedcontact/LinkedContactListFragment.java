@@ -1,4 +1,4 @@
-package io.ditho.assignment.view.merge;
+package io.ditho.assignment.view.linkedcontact;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -12,6 +12,9 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -24,13 +27,13 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import io.ditho.assignment.R;
 import io.ditho.assignment.common.MouseEventUtils;
-import io.ditho.assignment.presenter.merge.LinkedContactListPresenter;
-import io.ditho.assignment.presenter.merge.LinkedContactListPresenterImpl;
+import io.ditho.assignment.presenter.linkedcontact.LinkedContactListPresenter;
+import io.ditho.assignment.presenter.linkedcontact.LinkedContactListPresenterImpl;
 import io.ditho.assignment.model.repository.RepositoryProvider;
 import io.ditho.assignment.model.repository.entity.ContactEntity;
 import io.ditho.assignment.model.rest.ApiProvider;
 import io.ditho.assignment.view.adapter.ContactListAdapter;
-import io.ditho.assignment.view.contact.ContactListFragment;
+import io.ditho.assignment.view.editcontact.EditContactListFragment;
 import io.ditho.assignment.view.main.MainActivity;
 
 public class LinkedContactListFragment extends Fragment implements LinkedContactListView {
@@ -67,14 +70,14 @@ public class LinkedContactListFragment extends Fragment implements LinkedContact
             rootId = getArguments().getString(ARG_ROOT_ID);
             parentId = getArguments().getString(ARG_PARENT_ID);
         }
-        setHasOptionsMenu(false);
+        setHasOptionsMenu(true);
         setRetainInstance(true);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_marge, container, false);
+        View view = inflater.inflate(R.layout.fragment_linked_contact, container, false);
 
         ButterKnife.bind(this, view);
 
@@ -88,6 +91,23 @@ public class LinkedContactListFragment extends Fragment implements LinkedContact
         return view;
     }
 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.linkedcontact, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        boolean retValue = false;
+        if (item.getItemId() == R.id.action_edit_contact) {
+            showEditContact();
+        } else {
+            retValue = super.onOptionsItemSelected(item);
+        }
+
+        return retValue;
+    }
 
     private void setupRecycleView() {
 
@@ -296,11 +316,12 @@ public class LinkedContactListFragment extends Fragment implements LinkedContact
         return parentId;
     }
 
-    public void showContactList() {
+    public void showEditContact() {
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
-                ContactListFragment fragment = ContactListFragment.newInstance();
+                EditContactListFragment fragment = EditContactListFragment.newInstance(
+                    getRootId(), getParentId());
                 MainActivity theActivity = (MainActivity) getActivity();
                 theActivity.showFragment(fragment);
             }

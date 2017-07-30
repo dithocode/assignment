@@ -1,4 +1,4 @@
-package io.ditho.assignment.presenter.merge;
+package io.ditho.assignment.presenter.linkedcontact;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -8,7 +8,7 @@ import io.ditho.assignment.model.repository.RepositoryProvider;
 import io.ditho.assignment.model.repository.dao.ContactDao;
 import io.ditho.assignment.model.repository.entity.ContactEntity;
 import io.ditho.assignment.model.rest.ApiProvider;
-import io.ditho.assignment.view.merge.LinkedContactListView;
+import io.ditho.assignment.view.linkedcontact.LinkedContactListView;
 
 public class LinkedContactListPresenterImpl implements LinkedContactListPresenter {
 

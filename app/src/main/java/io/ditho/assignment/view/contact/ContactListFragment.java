@@ -35,8 +35,9 @@ import io.ditho.assignment.model.repository.entity.ContactEntity;
 import io.ditho.assignment.model.rest.ApiProvider;
 import io.ditho.assignment.presenter.contact.ContactListPresenterImpl;
 import io.ditho.assignment.view.adapter.ContactListAdapter;
+import io.ditho.assignment.view.editcontact.EditContactListFragment;
 import io.ditho.assignment.view.main.MainActivity;
-import io.ditho.assignment.view.merge.LinkedContactListFragment;
+import io.ditho.assignment.view.linkedcontact.LinkedContactListFragment;
 
 public class ContactListFragment extends Fragment implements ContactListView {
 
