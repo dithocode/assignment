@@ -96,19 +96,19 @@ public class ContactListPresenterImpl implements ContactListPresenter {
 
     @Override
     public void start() {
-        fetchData();
     }
 
     @Override
-    public void stop() { cancelAnyFetchData(); }
+    public void stop() {  }
 
     @Override
     public void pause() {
-
+        cancelAnyFetchData();
     }
 
     @Override
     public void resume() {
+        fetchData();
 
     }
 

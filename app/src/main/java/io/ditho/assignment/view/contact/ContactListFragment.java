@@ -29,12 +29,14 @@ import java.util.List;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import io.ditho.assignment.R;
+import io.ditho.assignment.common.MouseEventUtils;
 import io.ditho.assignment.model.repository.RepositoryProvider;
 import io.ditho.assignment.model.repository.entity.ContactEntity;
 import io.ditho.assignment.model.rest.ApiProvider;
 import io.ditho.assignment.presenter.contact.ContactListPresenterImpl;
 import io.ditho.assignment.view.adapter.ContactListAdapter;
 import io.ditho.assignment.view.main.MainActivity;
+import io.ditho.assignment.view.merge.LinkedContactListFragment;
 
 public class ContactListFragment extends Fragment implements ContactListView {
 
@@ -85,7 +87,17 @@ public class ContactListFragment extends Fragment implements ContactListView {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
 
-        listAdapter = new ContactListAdapter(getActivity());
+        listAdapter = new ContactListAdapter(getActivity(), new ContactListAdapter.EventListener() {
+            @Override
+            public void onClick(int position) {
+                ContactEntity contactEntity = listAdapter.get(position);
+                if (contactEntity != null &&
+                    contactEntity.getLinkCount() > 0) {
+                    showLinkedContactList(contactEntity);
+                }
+            }
+        });
+
         listView.setLayoutManager(linearLayoutManager);
         listView.setAdapter(listAdapter);
         listView.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
@@ -121,6 +133,20 @@ public class ContactListFragment extends Fragment implements ContactListView {
 
         final GestureDetector.OnGestureListener gastureDetectorListener =
             new GestureDetector.SimpleOnGestureListener() {
+
+//                @Override
+//                public boolean onSingleTapConfirmed(MotionEvent e) {
+//                    View child = listView.findChildViewUnder(e.getX(), e.getY());
+//                    if (child != null) {
+//                        int position = listView.getChildAdapterPosition(child) - 1;
+//                        ContactEntity contactEntity = listAdapter.get(position);
+//                        if (contactEntity.getLinkCount() > 0) {
+//                            showLinkedContactList(contactEntity);
+//                        }
+//                    }
+//
+//                    return true;
+//                }
 
                 @Override
                 public void onLongPress(MotionEvent e) {
@@ -162,7 +188,6 @@ public class ContactListFragment extends Fragment implements ContactListView {
             @Override
             public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {}
         });
-
     }
 
     private void setupSelectionMode(int startPosition) {
@@ -192,9 +217,6 @@ public class ContactListFragment extends Fragment implements ContactListView {
     private void finishSelectionMode() {
         revertSelectionToolbar();
         setupMenu();
-
-        listAdapter.setSelectionMode(false);
-        listView.setPullRefreshEnabled(true);
     }
 
     private void initMenu(Menu menu) {
@@ -286,10 +308,10 @@ public class ContactListFragment extends Fragment implements ContactListView {
                 List<ContactEntity> selection = listAdapter.getSelection();
                 finishSelectionMode();
                 presenter.mergeContact(selection);
-
                 break;
             default:
                 retVal = super.onOptionsItemSelected(item);
+                break;
         }
 
         return retVal;
@@ -346,6 +368,10 @@ public class ContactListFragment extends Fragment implements ContactListView {
                 if (!isRefreshing) {
                     isRefreshing = true;
                     listView.setRefreshing(true);
+
+                    // Force to show refresh indicator
+                    // need to research later on Fragment Replace on completely updating layout
+                    MouseEventUtils.generatePullTouch(listView);
                 }
             }
         });
@@ -408,8 +434,13 @@ public class ContactListFragment extends Fragment implements ContactListView {
     }
 
     @Override
-    public void goBack() {
-
+    public boolean goBack() {
+        boolean retVal = false;
+        if (listAdapter.getSelectionMode()) {
+            finishSelectionMode();
+            retVal = true;
+        }
+        return retVal;
     }
 
     @Override
@@ -439,5 +470,19 @@ public class ContactListFragment extends Fragment implements ContactListView {
         });
     }
 
+    public void showLinkedContactList(ContactEntity contactEntity) {
+        final String rootId = contactEntity.getId();
+        final String parentId = contactEntity.getId();
 
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                LinkedContactListFragment fragment = LinkedContactListFragment.newInstance(
+                        rootId,
+                        parentId);
+                MainActivity theActivity = (MainActivity) getActivity();
+                theActivity.showFragment(fragment);
+            }
+        }, 500);
+    }
 }

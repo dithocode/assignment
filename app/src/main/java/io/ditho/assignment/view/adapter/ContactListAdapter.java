@@ -33,6 +33,10 @@ import io.ditho.assignment.model.repository.entity.ContactEntity;
 
 public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.ViewHolder> {
 
+    public interface EventListener {
+        void onClick(int position);
+    }
+
     private ArrayList<ContactEntity> contactEntityList = new ArrayList<>();
     private HashMap<Integer, ItemState> itemStateMap = new HashMap<>();
     private ArrayList<Integer> selectedPosition = new ArrayList<>();
@@ -40,10 +44,12 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
     private Context context;
     private LayoutInflater inflater;
     private boolean selectionMode;
+    private EventListener listener;
 
-    public ContactListAdapter(Context context) {
+    public ContactListAdapter(Context context, EventListener listener) {
         this.context = context;
         this.inflater = LayoutInflater.from(context);
+        this.listener = listener;
     }
 
     @Override
@@ -250,6 +256,18 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
         notifyDataSetChanged();
     }
 
+    public void toggleExpand(int position) {
+        if (position >= 0 && position < getItemCount()) {
+            ItemState itemState = getItemState(position);
+            if (itemState.isExpanded) {
+                itemState.isExpanded = false;
+            } else {
+                itemState.isExpanded = true;
+            }
+            notifyDataSetChanged();
+        }
+    }
+
     protected ItemState getItemState(int position) {
         return itemStateMap.get(position);
     }
@@ -330,7 +348,7 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
 
             bindDataPosition = -1;
 
-            layoutRoot.setOnClickListener(new View.OnClickListener() {
+            imageExpand.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     int position = bindDataPosition;
@@ -342,6 +360,15 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
                             itemState.isExpanded = true;
                         }
                         notifyDataSetChanged();
+                    }
+                }
+            });
+
+            layoutRoot.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (listener != null) {
+                        listener.onClick(bindDataPosition);
                     }
                 }
             });

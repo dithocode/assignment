@@ -7,7 +7,7 @@ public interface BaseView<T> {
 
     void updateModel(T model);
 
-    void goBack();
+    boolean goBack();
     void displayMessage(String title, String message);
 
 }

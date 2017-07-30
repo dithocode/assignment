@@ -15,8 +15,10 @@ public interface ContactDao {
     @Query("SELECT * FROM ContactEntity ORDER BY Account, FirstName ASC")
     List<ContactEntity> getAll();
 
-//    @Query("SELECT * FROM ContactEntity ORDER BY Account, FirstName ASC WHERE ParentID IS NULL")
-//    List<ContactEntity> getMergedContact();
+    @Query("SELECT * FROM ContactEntity " +
+            "WHERE id IN (SELECT ContactID FROM MergeContactEntity WHERE MergeID = :parentId) " +
+            "ORDER BY Account, FirstName ASC")
+    List<ContactEntity> getLinkedContact(String parentId);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(ContactEntity... contactEntities);

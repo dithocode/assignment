@@ -7,8 +7,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,35 +23,39 @@ import java.util.List;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import io.ditho.assignment.R;
-import io.ditho.assignment.presenter.merge.MergedListPresenter;
-import io.ditho.assignment.presenter.merge.MergedListPresenterImpl;
+import io.ditho.assignment.common.MouseEventUtils;
+import io.ditho.assignment.presenter.merge.LinkedContactListPresenter;
+import io.ditho.assignment.presenter.merge.LinkedContactListPresenterImpl;
 import io.ditho.assignment.model.repository.RepositoryProvider;
 import io.ditho.assignment.model.repository.entity.ContactEntity;
 import io.ditho.assignment.model.rest.ApiProvider;
 import io.ditho.assignment.view.adapter.ContactListAdapter;
+import io.ditho.assignment.view.contact.ContactListFragment;
+import io.ditho.assignment.view.main.MainActivity;
 
-public class MergedListFragment extends Fragment implements MergedListView {
+public class LinkedContactListFragment extends Fragment implements LinkedContactListView {
 
-    private MergedListPresenter presenter;
+    public static final String ARG_ROOT_ID = "ARG_ROOT_ID";
+    public static final String ARG_PARENT_ID = "ARG_PARENT_ID";
 
+    private LinkedContactListPresenter presenter;
     private ContactListAdapter listAdapter;
+    private String parentId;
+    private String rootId;
 
     @Nullable
-    @Bind(R.id.listview_marged_contact)
+    @Bind(R.id.listview_contact)
     XRecyclerView listView;
 
-    public MergedListFragment() {
-        presenter = new MergedListPresenterImpl();
+    public LinkedContactListFragment() {
+        presenter = new LinkedContactListPresenterImpl();
     }
 
-    /**
-     * create a new instance of contact list fragment
-     *
-     * @return A new instance of fragment AccountContactListFragment.
-     */
-    public static MergedListFragment newInstance() {
-        MergedListFragment fragment = new MergedListFragment();
+    public static LinkedContactListFragment newInstance(String rootId, String parentId) {
+        LinkedContactListFragment fragment = new LinkedContactListFragment();
         Bundle args = new Bundle();
+        args.putString(ARG_ROOT_ID, rootId);
+        args.putString(ARG_PARENT_ID, parentId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -57,6 +63,10 @@ public class MergedListFragment extends Fragment implements MergedListView {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            rootId = getArguments().getString(ARG_ROOT_ID);
+            parentId = getArguments().getString(ARG_PARENT_ID);
+        }
         setHasOptionsMenu(false);
         setRetainInstance(true);
     }
@@ -68,46 +78,66 @@ public class MergedListFragment extends Fragment implements MergedListView {
 
         ButterKnife.bind(this, view);
 
-        listAdapter = new ContactListAdapter(getActivity());
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
-        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-
-        listView.setLayoutManager(linearLayoutManager);
-        listView.setAdapter(listAdapter);
-        listView.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
-        listView.setLoadingMoreProgressStyle(ProgressStyle.BallRotate);
-
-        listView.setPullRefreshEnabled(true);
-        listView.setLoadingMoreEnabled(false);
-        listView.setLoadingListener(new XRecyclerView.LoadingListener() {
-            @Override
-            public void onRefresh() {
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        presenter.fetchData();
-                    }
-                }, 1000);
-            }
-
-            @Override
-            public void onLoadMore() {
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        presenter.fetchMoreData();
-                    }
-                }, 1000);
-
-            }
-        });
-
+        setupRecycleView();
+        setupToolbar();
         presenter.init(
                 this,
                 ApiProvider.getInstance(getActivity()),
                 RepositoryProvider.getInstance(getActivity()));
 
         return view;
+    }
+
+
+    private void setupRecycleView() {
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
+        listAdapter = new ContactListAdapter(getActivity(), null);
+        listView.setLayoutManager(linearLayoutManager);
+        listView.setAdapter(listAdapter);
+        listView.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
+        listView.setLoadingMoreProgressStyle(ProgressStyle.BallRotate);
+
+        listView.setPullRefreshEnabled(false);
+        listView.setLoadingMoreEnabled(false);
+
+    }
+
+    private void setupToolbar() {
+        MainActivity theActivity = (MainActivity) getActivity();
+        if (theActivity != null) {
+            Toolbar toolbar = theActivity.getMainToolbar();
+            ActionBar theActionBar = theActivity.getSupportActionBar();
+            if (theActionBar != null) {
+                theActionBar.setDisplayHomeAsUpEnabled(true);
+            }
+            if (toolbar != null) {
+                toolbar.setTitle("Linked Contact");
+                toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        exitFragment();
+                    }
+                });
+            }
+        }
+    }
+
+    private void exitFragment() {
+        MainActivity theActivity = (MainActivity) getActivity();
+        ActionBar theActionBar = theActivity.getSupportActionBar();
+        if (theActionBar != null) {
+            theActionBar.setDisplayHomeAsUpEnabled(false);
+        }
+        theActivity.setupToolbar();
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                getActivity().onBackPressed();
+            }
+        });
     }
 
     @Override
@@ -132,7 +162,7 @@ public class MergedListFragment extends Fragment implements MergedListView {
     @Override
     public void onStart() {
         super.onStart();
-        listView.setRefreshing(true);
+        presenter.start();
     }
 
     @Override
@@ -155,6 +185,16 @@ public class MergedListFragment extends Fragment implements MergedListView {
 
     @Override
     public void startLoad() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                listView.setRefreshing(true);
+
+                // Force to show refresh indicator
+                // need to research later on Fragment Replace on completely updating layout
+                MouseEventUtils.generatePullTouch(listView);
+            }
+        });
     }
 
     @Override
@@ -182,27 +222,14 @@ public class MergedListFragment extends Fragment implements MergedListView {
     }
 
     @Override
-    public void appendModel(final List<ContactEntity> model) {
+    public void updateModel(List<ContactEntity> model) {
         if (listAdapter != null) {
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                @Override
-                public void run() {
-                    listAdapter.addAll(model);
-                    listAdapter.notifyDataSetChanged();
-                }
-            });
-        }
-    }
-
-    @Override
-    public void updateModel(final List<ContactEntity> model) {
-        if (listAdapter != null) {
+            final List<ContactEntity> lModel = model;
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
                     listAdapter.clear();
-                    listAdapter.addAll(model);
-
+                    listAdapter.addAll(lModel);
                     listAdapter.notifyDataSetChanged();
                 }
             });
@@ -210,8 +237,22 @@ public class MergedListFragment extends Fragment implements MergedListView {
     }
 
     @Override
-    public void goBack() {
+    public void appendModel(final List<ContactEntity> model) {
+        if (listAdapter != null) {
+            final List<ContactEntity> lModel = model;
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    listAdapter.addAll(lModel);
+                    listAdapter.notifyDataSetChanged();
+                }
+            });
+        }
+    }
 
+    @Override
+    public boolean goBack() {
+        return false;
     }
 
     @Override
@@ -241,4 +282,24 @@ public class MergedListFragment extends Fragment implements MergedListView {
         });
     }
 
+    @Override
+    public String getRootId() {
+        return rootId;
+    }
+
+    @Override
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void showContactList() {
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ContactListFragment fragment = ContactListFragment.newInstance();
+                MainActivity theActivity = (MainActivity) getActivity();
+                theActivity.showFragment(fragment);
+            }
+        }, 500);
+    }
 }
