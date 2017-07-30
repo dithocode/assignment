@@ -10,7 +10,12 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -18,13 +23,12 @@
             android:id="@+id/image_expand"
             android:layout_width="24dp"
             android:layout_height="24dp"
+            android:visibility="gone"
             app:srcCompat="@drawable/ic_arrow_down" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="16dp"
-            android:layout_marginStart="16dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -37,6 +41,7 @@
                     android:id="@+id/image_picture"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
+                    android:layout_gravity="center_vertical"
                     app:srcCompat="@drawable/ic_menu_gallery"
                     tools:ignore="ContentDescription" />
 
@@ -59,6 +64,7 @@
                         android:id="@+id/text_account_value"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
                         android:textSize="12sp" />
 
                     <TextView
@@ -72,6 +78,7 @@
                         android:id="@+id/text_full_name_value"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
                         android:textSize="18sp" />
 
                 </LinearLayout>
@@ -80,8 +87,11 @@
                     android:id="@+id/text_link_count_value"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:paddingLeft="8dp"
+                    android:paddingStart="8dp"
                     android:text="0"
                     android:textSize="18sp"
+                    android:textStyle="bold"
                     tools:ignore="HardcodedText" />
             </LinearLayout>
 

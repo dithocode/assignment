@@ -348,7 +348,7 @@ public class ContactListAdapter extends RecyclerView.Adapter<ContactListAdapter.
 
             bindDataPosition = -1;
 
-            imageExpand.setOnClickListener(new View.OnClickListener() {
+            imageContact.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     int position = bindDataPosition;

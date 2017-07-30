@@ -215,6 +215,9 @@ public class ContactListFragment extends Fragment implements ContactListView {
     }
 
     private void finishSelectionMode() {
+        listAdapter.setSelectionMode(false);
+        listAdapter.clearSelection();
+        listView.setPullRefreshEnabled(true);
         revertSelectionToolbar();
         setupMenu();
     }
