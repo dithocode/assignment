@@ -31,6 +31,7 @@ import java.util.List;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import io.ditho.assignment.R;
+import io.ditho.assignment.common.ModelConverter;
 import io.ditho.assignment.common.MouseEventUtils;
 import io.ditho.assignment.model.repository.RepositoryProvider;
 import io.ditho.assignment.model.repository.entity.ContactEntity;
@@ -334,121 +335,16 @@ public class EditContactListFragment extends Fragment implements EditContactList
     }
 
     void transformAndSave(HashMap<String, String> selectedResult) {
-        String value = "";
 
-        value = selectedResult.get("First Name");
-        if (!TextUtils.isEmpty(value)) parentEntity.setFirstName(value);
-
-        value = selectedResult.get("Middle Name");
-        if (!TextUtils.isEmpty(value)) parentEntity.setMiddleName(value);
-
-        value = selectedResult.get("Last Name");
-        if (!TextUtils.isEmpty(value)) parentEntity.setLastName(value);
-
-        value = selectedResult.get("Full Name");
-        if (!TextUtils.isEmpty(value)) parentEntity.setFullName(value);
-
-        value = selectedResult.get("Gender");
-        if (!TextUtils.isEmpty(value)) parentEntity.setGender(value);
-
-        value = selectedResult.get("Email");
-        if (!TextUtils.isEmpty(value)) parentEntity.setEmail(value);
-
-        value = selectedResult.get("Phone");
-        if (!TextUtils.isEmpty(value)) parentEntity.setPhone(value);
-
-        value = selectedResult.get("Mobile");
-        if (!TextUtils.isEmpty(value)) parentEntity.setMobile(value);
-
-        value = selectedResult.get("Business Email");
-        if (!TextUtils.isEmpty(value)) parentEntity.setBusinessEmail(value);
-
-        value = selectedResult.get("Business Phone");
-        if (!TextUtils.isEmpty(value)) parentEntity.setBusinessPhone(value);
-
-        value = selectedResult.get("Business Mobile");
-        if (!TextUtils.isEmpty(value)) parentEntity.setBusinessMobile(value);
-
-        value = selectedResult.get("Job Title");
-        if (!TextUtils.isEmpty(value)) parentEntity.setJobTitleDescription(value);
-
-        value = selectedResult.get("Notes");
-        if (!TextUtils.isEmpty(value)) parentEntity.setNotes(value);
-
-        value = selectedResult.get("Picture Url");
-        if (!TextUtils.isEmpty(value)) parentEntity.setPictureThumbnailUrl(value);
-
+        ModelConverter.transform(selectedResult, parentEntity);
         presenter.saveData(parentEntity);
     }
 
     void transformAndApplyModel(List<ContactEntity> model) {
         ArrayList<String> listTitle = new ArrayList<>();
-
-        listTitle.add("First Name");
-        listTitle.add("Middle Name");
-        listTitle.add("Last Name");
-        listTitle.add("Full Name");
-        listTitle.add("Gender");
-        listTitle.add("Email");
-        listTitle.add("Phone");
-        listTitle.add("Mobile");
-        listTitle.add("Business Email");
-        listTitle.add("Business Phone");
-        listTitle.add("Business Mobile");
-        listTitle.add("Job Title");
-        listTitle.add("Notes");
-        listTitle.add("Picture Url");
-
-        int modelSize = model.size();
-
         ArrayList<ArrayList<String>> fieldValueList = new ArrayList<>();
-        ArrayList<String> fieldFirstNameValueList = new ArrayList<>();
-        ArrayList<String> fieldMidleNameValueList = new ArrayList<>();
-        ArrayList<String> fieldLastNameValueList = new ArrayList<>();
-        ArrayList<String> fieldFullNameValueList = new ArrayList<>();
-        ArrayList<String> fieldGenderValueList = new ArrayList<>();
-        ArrayList<String> fieldEmailValueList = new ArrayList<>();
-        ArrayList<String> fieldPhoneValueList = new ArrayList<>();
-        ArrayList<String> fieldMobileValueList = new ArrayList<>();
-        ArrayList<String> fieldBusinessEmailValueList = new ArrayList<>();
-        ArrayList<String> fieldBusinessPhoneValueList = new ArrayList<>();
-        ArrayList<String> fieldBusinessMobileValueList = new ArrayList<>();
-        ArrayList<String> fieldJobTitleValueList = new ArrayList<>();
-        ArrayList<String> fieldNotesValueList = new ArrayList<>();
-        ArrayList<String> fieldPictureUrlValueList = new ArrayList<>();
 
-        for (int counter = 0; counter < modelSize; counter++) {
-            ContactEntity contactEntity = model.get(counter);
-            fieldFirstNameValueList.add(contactEntity.getFirstName());
-            fieldMidleNameValueList.add(contactEntity.getMiddleName());
-            fieldLastNameValueList.add(contactEntity.getLastName());
-            fieldFullNameValueList.add(contactEntity.getFullName());
-            fieldGenderValueList.add(contactEntity.getGender());
-            fieldEmailValueList.add(contactEntity.getEmail());
-            fieldPhoneValueList.add(contactEntity.getPhone());
-            fieldMobileValueList.add(contactEntity.getMobile());
-            fieldBusinessEmailValueList.add(contactEntity.getBusinessEmail());
-            fieldBusinessPhoneValueList.add(contactEntity.getBusinessPhone());
-            fieldBusinessMobileValueList.add(contactEntity.getBusinessMobile());
-            fieldJobTitleValueList.add(contactEntity.getJobTitleDescription());
-            fieldNotesValueList.add(contactEntity.getNotes());
-            fieldPictureUrlValueList.add(contactEntity.getPictureThumbnailUrl());
-        }
-
-        fieldValueList.add(fieldFirstNameValueList);
-        fieldValueList.add(fieldMidleNameValueList);
-        fieldValueList.add(fieldLastNameValueList);
-        fieldValueList.add(fieldFullNameValueList);
-        fieldValueList.add(fieldGenderValueList);
-        fieldValueList.add(fieldEmailValueList);
-        fieldValueList.add(fieldPhoneValueList);
-        fieldValueList.add(fieldMobileValueList);
-        fieldValueList.add(fieldBusinessEmailValueList);
-        fieldValueList.add(fieldBusinessPhoneValueList);
-        fieldValueList.add(fieldBusinessMobileValueList);
-        fieldValueList.add(fieldJobTitleValueList);
-        fieldValueList.add(fieldNotesValueList);
-        fieldValueList.add(fieldPictureUrlValueList);
+        ModelConverter.transform(model, listTitle, fieldValueList);
 
         listAdapter.setListData(listTitle, fieldValueList);
         listAdapter.notifyDataSetChanged();
